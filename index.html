@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>技术服务机构工作台</title>
+  <style>
+    :root {
+      --primary: #1677ff;
+      --primary-light: #e6f4ff;
+      --danger: #ff4d4f;
+      --danger-light: #fff1f0;
+      --warning: #faad14;
+      --warning-light: #fff7e6;
+      --success: #52c41a;
+      --success-light: #f6ffed;
+      --purple: #722ed1;
+      --purple-light: #f9f0ff;
+      --cyan: #13c2c2;
+      --cyan-light: #e6fffb;
+      --orange: #fa8c16;
+      --orange-light: #fff7e6;
+      --text: #1f1f1f;
+      --text-2: #595959;
+      --text-3: #8c8c8c;
+      --text-4: #bfbfbf;
+      --bg: #f5f5f5;
+      --white: #fff;
+      --border: #f0f0f0;
+      --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg); color: var(--text);
+      max-width: 430px; margin: 0 auto; min-height: 100vh; overflow-x: hidden;
+    }
+    .page { display:none; min-height:100vh; flex-direction:column; }
+    .page.active { display:flex; }
+
+    .header {
+      background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
+      color: #fff; padding: 48px 20px 14px; position: sticky; top: 0; z-index: 100;
+    }
+    .header-title { font-size:17px; font-weight:600; text-align:center; }
+    .header-back {
+      position:absolute; left:12px; top:46px; background:none; border:none;
+      color:#fff; font-size:14px; cursor:pointer; display:flex; align-items:center; gap:2px; padding:4px;
+    }
+    .header-back svg { width:20px; height:20px; }
+
+    .main-tabs { display:flex; background:var(--white); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:99; }
+    .main-tab {
+      flex:1; text-align:center; padding:13px 0; font-size:14px; color:var(--text-3);
+      cursor:pointer; position:relative; border:none; background:none; font-family:inherit; transition:color .2s;
+    }
+    .main-tab.active { color:var(--primary); font-weight:600; }
+    .main-tab.active::after {
+      content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+      width:24px; height:3px; background:var(--primary); border-radius:2px;
+    }
+    .main-tab .tab-badge {
+      position:absolute; top:6px; right:calc(50% - 32px);
+      min-width:16px; height:16px; padding:0 4px; border-radius:8px;
+      background:var(--danger); color:#fff; font-size:10px; line-height:16px; text-align:center;
+    }
+
+    .sub-tabs { display:flex; background:var(--white); padding:0 16px; gap:4px; border-bottom:1px solid var(--border); }
+    .sub-tab {
+      padding:11px 14px; font-size:13px; color:var(--text-3); cursor:pointer;
+      position:relative; border:none; background:none; font-family:inherit; white-space:nowrap; transition:color .2s;
+    }
+    .sub-tab.active { color:var(--primary); font-weight:600; }
+    .sub-tab.active::after {
+      content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+      width:100%; height:2px; background:var(--primary); border-radius:1px;
+    }
+    .sub-tab .cnt {
+      display:inline-block; color:#fff; font-size:10px; font-weight:600;
+      padding:1px 5px; border-radius:9px; margin-left:3px; vertical-align:middle;
+    }
+
+    .content { flex:1; padding:12px 16px 80px; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+
+    .card-list { display:flex; flex-direction:column; gap:10px; }
+    .card {
+      background:var(--white); border-radius:12px; padding:14px; display:flex;
+      align-items:flex-start; gap:12px; box-shadow:var(--shadow); cursor:pointer; transition:transform .12s;
+    }
+    .card:active { transform:scale(0.98); }
+    .card-icon {
+      width:40px; height:40px; border-radius:10px; display:flex;
+      align-items:center; justify-content:center; flex-shrink:0;
+    }
+    .card-icon svg { width:20px; height:20px; }
+    .card-body { flex:1; min-width:0; }
+    .card-type { font-size:12px; color:var(--text-3); margin-bottom:3px; display:flex; align-items:center; gap:6px; }
+    .badge { font-size:11px; padding:1px 6px; border-radius:4px; font-weight:500; }
+    .badge-pending { background:var(--warning-light); color:#d46b08; }
+    .badge-done { background:var(--success-light); color:#389e0d; }
+    .badge-unread { background:var(--primary-light); color:var(--primary); }
+    .badge-read { background:#f5f5f5; color:var(--text-3); }
+    .card-title { font-size:14px; font-weight:500; line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .card-time { font-size:12px; color:var(--text-4); margin-top:4px; }
+    .card-arrow { color:var(--text-4); flex-shrink:0; align-self:center; }
+    .card .unread-dot {
+      width:8px; height:8px; border-radius:50%; background:var(--danger);
+      flex-shrink:0; margin-top:6px;
+    }
+
+    .view-more-wrap { padding:16px 0 24px; text-align:center; }
+    .btn-more {
+      display:inline-flex; align-items:center; gap:5px; padding:10px 28px;
+      border:1px solid var(--primary); border-radius:22px; background:var(--white);
+      color:var(--primary); font-size:13px; font-weight:500; cursor:pointer; font-family:inherit; transition:all .2s;
+    }
+    .btn-more:active { background:var(--primary-light); }
+    .btn-more svg { width:14px; height:14px; }
+
+    .empty { display:flex; flex-direction:column; align-items:center; padding:60px 0; color:var(--text-4); }
+    .empty svg { width:64px; height:64px; margin-bottom:12px; opacity:.35; }
+    .empty p { font-size:13px; }
+
+    /* Detail */
+    .detail-section { background:var(--white); border-radius:12px; padding:18px 16px; margin-bottom:10px; box-shadow:var(--shadow); }
+    .detail-title { font-size:16px; font-weight:600; line-height:1.5; margin-bottom:14px; }
+    .detail-meta { display:flex; flex-direction:column; gap:10px; }
+    .detail-row { display:flex; font-size:13px; line-height:1.5; }
+    .detail-label { color:var(--text-3); width:72px; flex-shrink:0; }
+    .detail-value { flex:1; color:var(--text); word-break:break-all; }
+    .detail-content { font-size:14px; line-height:1.8; color:#434343; }
+    .detail-section h4 { font-size:14px; font-weight:600; margin-bottom:10px; }
+
+    .action-bar {
+      position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+      width:100%; max-width:430px; background:var(--white);
+      padding:10px 16px max(10px, env(safe-area-inset-bottom));
+      box-shadow:0 -2px 8px rgba(0,0,0,.06); display:flex; gap:10px; z-index:100;
+    }
+    .btn {
+      flex:1; padding:11px 0; border-radius:8px; font-size:14px; font-weight:500;
+      cursor:pointer; border:none; font-family:inherit; transition:opacity .2s;
+    }
+    .btn:active { opacity:.7; }
+    .btn-primary { background:var(--primary); color:#fff; }
+    .btn-outline { background:var(--white); color:var(--text); border:1px solid #d9d9d9; }
+    .btn-danger-outline { background:var(--white); color:var(--danger); border:1px solid var(--danger); }
+    .btn-success { background:var(--success); color:#fff; }
+    .btn-disabled { background:#f5f5f5; color:var(--text-4); cursor:default; }
+
+    /* Rating */
+    .rating { display:flex; gap:8px; justify-content:center; margin:16px 0; }
+    .rating .star { width:32px; height:32px; cursor:pointer; color:#d9d9d9; transition:color .15s; }
+    .rating .star.active { color:var(--warning); }
+
+    .toast {
+      position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+      background:rgba(0,0,0,.75); color:#fff; padding:12px 24px; border-radius:8px;
+      font-size:14px; z-index:9999; pointer-events:none; opacity:0; transition:opacity .3s;
+    }
+    .toast.show { opacity:1; }
+
+    /* Dialog overlay */
+    .dialog-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200;
+      display:none; align-items:flex-end; justify-content:center;
+    }
+    .dialog-overlay.show { display:flex; }
+    .dialog-box {
+      background:var(--white); border-radius:16px 16px 0 0; width:100%; max-width:430px;
+      padding:24px 20px max(20px, env(safe-area-inset-bottom)); animation:slideUp .25s ease-out;
+    }
+    @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+    .dialog-box h3 { font-size:16px; font-weight:600; margin-bottom:16px; text-align:center; }
+    .dialog-box textarea {
+      width:100%; height:100px; border:1px solid #d9d9d9; border-radius:8px;
+      padding:10px; font-size:14px; font-family:inherit; resize:none; margin-bottom:16px;
+    }
+    .dialog-box .dialog-btns { display:flex; gap:10px; }
+    .dialog-box .dialog-btns .btn { flex:1; }
+
+    /* Handle Info Section */
+    .handle-section { background:var(--white); border-radius:12px; padding:18px 16px; margin-bottom:10px; box-shadow:var(--shadow); border-left:3px solid var(--success); }
+    .handle-section.rejected { border-left-color:var(--danger); }
+    .handle-section h4 { font-size:14px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+    .handle-section h4 svg { width:16px; height:16px; }
+
+    /* AI Tip */
+    .ai-tip {
+      display:flex; gap:10px; align-items:flex-start;
+      background:linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%);
+      border:1px solid #bae0ff; border-radius:12px;
+      padding:14px 16px; margin-bottom:10px;
+    }
+    .ai-tip-icon {
+      width:36px; height:36px; border-radius:50%;
+      background:linear-gradient(135deg, #597ef7 0%, #1677ff 100%);
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    }
+    .ai-tip-icon svg { width:20px; height:20px; color:#fff; }
+    .ai-tip-body { flex:1; }
+    .ai-tip-label { font-size:12px; font-weight:600; color:#1677ff; margin-bottom:4px; }
+    .ai-tip-text { font-size:13px; line-height:1.6; color:#434343; }
+
+    /* Review Links */
+    .review-links { display:flex; flex-direction:column; gap:8px; }
+    .review-link {
+      display:flex; align-items:center; gap:10px; padding:12px 14px;
+      background:#fafafa; border:1px solid var(--border); border-radius:8px;
+      cursor:pointer; transition:all .15s; font-size:14px; color:var(--primary);
+    }
+    .review-link:active { background:#f0f0f0; }
+    .review-link .rl-check {
+      width:20px; height:20px; border-radius:50%; border:2px solid #d9d9d9;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .2s;
+    }
+    .review-link.viewed .rl-check { border-color:var(--success); background:var(--success); }
+    .review-link.viewed .rl-check svg { display:block; }
+    .review-link .rl-check svg { display:none; width:12px; height:12px; color:#fff; }
+    .review-link .rl-name { flex:1; }
+    .review-link .rl-arrow { color:var(--text-4); }
+    .review-link.viewed { color:var(--text-2); border-color:#e8e8e8; }
+    .review-progress { font-size:12px; color:var(--text-3); margin-top:6px; text-align:right; }
+
+    /* Contact Picker */
+    .contact-list { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+    .contact-item {
+      display:flex; align-items:center; gap:10px; padding:12px 14px;
+      border:1px solid var(--border); border-radius:8px; cursor:pointer; transition:all .15s;
+    }
+    .contact-item:active { background:#f5f5f5; }
+    .contact-item.selected { border-color:var(--primary); background:var(--primary-light); }
+    .contact-avatar {
+      width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#597ef7,#1677ff);
+      display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; font-weight:600; flex-shrink:0;
+    }
+    .contact-info { flex:1; }
+    .contact-name { font-size:14px; font-weight:500; }
+    .contact-role { font-size:12px; color:var(--text-3); margin-top:2px; }
+    .contact-check { width:20px; height:20px; color:var(--primary); display:none; }
+    .contact-item.selected .contact-check { display:block; }
+
+    /* Search & Filter Bar */
+    .search-filter-bar { background:var(--white); padding:12px 16px 8px; }
+    .search-box {
+      display:flex; align-items:center; background:#f5f5f5; border-radius:8px;
+      padding:0 12px; height:36px; gap:8px;
+    }
+    .search-box svg { width:16px; height:16px; color:var(--text-4); flex-shrink:0; }
+    .search-box input {
+      flex:1; border:none; background:none; outline:none; font-size:13px;
+      font-family:inherit; color:var(--text); height:100%;
+    }
+    .search-box input::placeholder { color:var(--text-4); }
+    .search-box .search-clear {
+      width:18px; height:18px; border-radius:50%; background:#d9d9d9; border:none;
+      display:none; align-items:center; justify-content:center; cursor:pointer; padding:0; flex-shrink:0;
+    }
+    .search-box .search-clear svg { width:12px; height:12px; color:#fff; }
+    .search-box .search-clear.show { display:flex; }
+    .filter-row { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+    .filter-chip {
+      display:inline-flex; align-items:center; gap:4px; padding:5px 12px;
+      border-radius:16px; font-size:12px; cursor:pointer; border:1px solid #e8e8e8;
+      background:var(--white); color:var(--text-2); font-family:inherit; transition:all .15s;
+      white-space:nowrap;
+    }
+    .filter-chip.active { border-color:var(--primary); background:var(--primary-light); color:var(--primary); font-weight:500; }
+    .filter-chip svg { width:12px; height:12px; }
+    .filter-dropdown-wrap { position:relative; }
+    .filter-dropdown {
+      position:absolute; top:calc(100% + 4px); left:0; z-index:50;
+      background:var(--white); border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,.12);
+      padding:6px 0; min-width:140px; max-height:260px; overflow-y:auto; display:none;
+    }
+    .filter-dropdown.show { display:block; }
+    .filter-dropdown .fd-item {
+      padding:9px 16px; font-size:13px; color:var(--text-2); cursor:pointer; display:flex;
+      align-items:center; justify-content:space-between; transition:background .1s;
+    }
+    .filter-dropdown .fd-item:active { background:#f5f5f5; }
+    .filter-dropdown .fd-item.active { color:var(--primary); font-weight:500; }
+    .filter-dropdown .fd-item.active::after { content:'✓'; color:var(--primary); font-size:14px; }
+    .search-result-info { padding:4px 0 2px; font-size:12px; color:var(--text-3); }
+
+    @keyframes slideInRight { from{transform:translateX(100%)} to{transform:translateX(0)} }
+    @keyframes slideInLeft { from{transform:translateX(-30%);opacity:.5} to{transform:translateX(0);opacity:1} }
+    .slide-in { animation:slideInRight .25s ease-out; }
+    .slide-back { animation:slideInLeft .2s ease-out; }
+  </style>
+</head>
+<body>
+
+<!-- ===== Page: Home ===== -->
+<div class="page active" id="page-home">
+  <div class="header"><div class="header-title">技术服务工作台</div></div>
+  <div class="main-tabs" id="main-tabs">
+    <button class="main-tab active" data-tab="work">工作提醒<span class="tab-badge" id="badge-work"></span></button>
+    <button class="main-tab" data-tab="message">消息通知<span class="tab-badge" id="badge-message"></span></button>
+    <button class="main-tab" data-tab="alert">预警提示<span class="tab-badge" id="badge-alert"></span></button>
+  </div>
+  <div class="content tab-content active" id="tab-work">
+    <div class="card-list" id="home-list-work"></div>
+    <div class="view-more-wrap"><button class="btn-more" data-cat="work">查看更多 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button></div>
+  </div>
+  <div class="content tab-content" id="tab-message">
+    <div class="card-list" id="home-list-message"></div>
+    <div class="view-more-wrap"><button class="btn-more" data-cat="message">查看更多 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button></div>
+  </div>
+  <div class="content tab-content" id="tab-alert">
+    <div class="card-list" id="home-list-alert"></div>
+    <div class="view-more-wrap"><button class="btn-more" data-cat="alert">查看更多 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button></div>
+  </div>
+</div>
+
+<!-- ===== Page: Full List ===== -->
+<div class="page" id="page-list">
+  <div class="header">
+    <button class="header-back" id="btn-back-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>返回</button>
+    <div class="header-title" id="list-title">工作提醒</div>
+  </div>
+  <div class="sub-tabs" id="sub-tabs"></div>
+  <div class="search-filter-bar">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="search-input" placeholder="搜索消息标题 / 内容">
+      <button class="search-clear" id="search-clear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="filter-row">
+      <div class="filter-dropdown-wrap" id="filter-tag-wrap">
+        <button class="filter-chip" id="filter-tag-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          <span id="filter-tag-text">消息类型</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="filter-dropdown" id="filter-tag-dropdown"></div>
+      </div>
+      <div class="filter-dropdown-wrap" id="filter-time-wrap">
+        <button class="filter-chip" id="filter-time-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span id="filter-time-text">时间范围</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="filter-dropdown" id="filter-time-dropdown"></div>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="search-result-info" id="search-result-info" style="display:none"></div>
+    <div class="card-list" id="full-list"></div>
+  </div>
+</div>
+
+<!-- ===== Page: Detail ===== -->
+<div class="page" id="page-detail">
+  <div class="header">
+    <button class="header-back" id="btn-back-list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>返回</button>
+    <div class="header-title" id="detail-page-title">详情</div>
+  </div>
+  <div class="content" id="detail-content"></div>
+  <div class="action-bar" id="action-bar"></div>
+</div>
+
+<!-- Dialog -->
+<div class="dialog-overlay" id="dialog-overlay">
+  <div class="dialog-box" id="dialog-box"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================== ICONS (SVG strings) ==============================
+const I = {
+  doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+  link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+  db: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
+  msg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  stop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>',
+  cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+  alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg>',
+  bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+  chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+  file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>',
+  users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>',
+  xCircle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+  ban: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+  arrowR: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>',
+};
+
+// ============================== TAG CONFIG ==============================
+const TAGS = {
+  project_dock:   { label:'项目对接',   icon:I.link,    color:'#1677ff', bg:'#e6f4ff', aiTip:'"同意"后，将建筑信息和技术交底共享文件开放给该服务机构' },
+  practice_apply: { label:'执业申请',   icon:I.doc,     color:'#fa8c16', bg:'#fff7e6', aiTip:'"同意"后，可前往首页查看"项目看板"的更多信息',
+    reviewLinks:['项目对接','项目信息','项目范围','人员公示','维保计划'] },
+  supplement:     { label:'补充数据',   icon:I.db,      color:'#13c2c2', bg:'#e6fffb' },
+  practice_fb:    { label:'执业反馈',   icon:I.msg,     color:'#722ed1', bg:'#f9f0ff' },
+  project_stop:   { label:'项目终止',   icon:I.stop,    color:'#ff4d4f', bg:'#fff1f0' },
+  project_expire: { label:'项目超期',   icon:I.clock,   color:'#cf1322', bg:'#fff1f0' },
+  project_renew:  { label:'项目续签',   icon:I.refresh, color:'#52c41a', bg:'#f6ffed' },
+  plan_change:    { label:'计划变更',   icon:I.cal,     color:'#fa8c16', bg:'#fff7e6' },
+  feedback_eval:  { label:'反馈评价',   icon:I.star,    color:'#722ed1', bg:'#f9f0ff' },
+  eval_expire:    { label:'评价超期',   icon:I.alert,   color:'#ff4d4f', bg:'#fff1f0' },
+  cert_success:   { label:'认证成功',   icon:I.shield,  color:'#52c41a', bg:'#f6ffed' },
+  suspend:        { label:'暂停执业',   icon:I.pause,   color:'#8c8c8c', bg:'#f5f5f5' },
+  fault:          { label:'发现故障',   icon:I.bolt,    color:'#ff4d4f', bg:'#fff1f0' },
+  monthly_report: { label:'月度报表',   icon:I.chart,   color:'#1677ff', bg:'#e6f4ff' },
+  service_report: { label:'服务报告',   icon:I.file,    color:'#13c2c2', bg:'#e6fffb' },
+  contract_exp:   { label:'合同到期',   icon:I.cal,     color:'#fa8c16', bg:'#fff7e6' },
+  staff_change:   { label:'人员变更',   icon:I.users,   color:'#722ed1', bg:'#f9f0ff' },
+  resume_work:    { label:'恢复执业',   icon:I.play,    color:'#52c41a', bg:'#f6ffed' },
+  inspect_fail:   { label:'检查不合格', icon:I.xCircle, color:'#ff4d4f', bg:'#fff1f0' },
+  order_stop:     { label:'责令停业',   icon:I.ban,     color:'#cf1322', bg:'#fff1f0' },
+};
+
+// ============================== ACTION TYPES ==============================
+const ACT = {
+  approve_reject: 'approve_reject',
+  approve_return: 'approve_return',
+  go_operate:     'go_operate',
+  evaluate:       'evaluate',
+  view_detail:    'view_detail',
+  mark_read:      'mark_read',
+};
+
+// ============================== MOCK DATA ==============================
+const INIT_ITEMS = [
+  // ============ 工作提醒 (category: 'work') ============
+  { id:1, cat:'work', tag:'project_dock', act:ACT.approve_reject,
+    title:'瑞安消防机构向您发出了万达广场项目对接申请',
+    content:'瑞安消防机构向您发出了万达广场项目对接申请，请仔细核对"委托单位信息"及"合同信息"等内容无误后，及时进行确认操作。',
+    business:'项目登记', sender:'瑞安消防机构项目负责人', receiver:'万达物业（委托单位）',
+    time:'2026-03-16 09:30', status:'pending', jumpPage:'查看详情' },
+  { id:2, cat:'work', tag:'practice_apply', act:ACT.approve_reject,
+    title:'正泰消防机构向您发出了执业申请',
+    content:'正泰消防机构向您发出了恒大花园项目的执业申请，请仔细核对"项目信息""项目范围""公示信息""维保计划"等内容无误后，及时进行确认操作。',
+    business:'项目登记', sender:'正泰消防机构项目负责人', receiver:'恒大物业（委托单位）',
+    time:'2026-03-16 08:15', status:'pending', jumpPage:'查看详情',
+    extra:'公示信息：项目范围覆盖B1-12F全部消防设施', _viewedLinks:{} },
+  { id:3, cat:'work', tag:'supplement', act:ACT.go_operate,
+    title:'锦绣花园基础数据不全',
+    content:'位于人民路128号的锦绣花园基础数据不全，请及时补全。',
+    business:'新增建筑', sender:'系统管理员', receiver:'委托单位用户/机构项目组全体人员',
+    time:'2026-03-15 17:20', status:'pending', jumpPage:'建筑详情页',
+    remark:'建筑信息未完整前每月发送一次' },
+  { id:4, cat:'work', tag:'practice_fb', act:ACT.evaluate,
+    title:'安达消防机构向您推送了执业反馈',
+    content:'安达消防机构向您推送了翠苑小区项目的执业反馈，请认真核对并及时掌握本次执业情况。',
+    business:'反馈评价', sender:'安达消防机构项目负责人', receiver:'翠苑物业（委托单位）',
+    time:'2026-03-15 15:45', status:'pending', jumpPage:'反馈评价页面' },
+  { id:5, cat:'work', tag:'project_stop', act:ACT.approve_return,
+    title:'华信机构提交金都花园项目终止申请',
+    content:'华信机构提交金都花园项目终止申请，请及时确认。',
+    business:'项目终止', sender:'华信机构项目负责人', receiver:'金都物业（委托单位）',
+    time:'2026-03-15 10:00', status:'pending', jumpPage:'终止详情页' },
+  { id:6, cat:'work', tag:'project_expire', act:ACT.view_detail,
+    title:'恒大花园项目已超期',
+    content:'恒大花园项目合同已到期，约定服务任务尚未全部完成，请予以重点关注。服务任务完成后方可结束项目。',
+    business:'项目超期', sender:'系统管理员', receiver:'项目负责人/委托单位用户',
+    time:'2026-03-14 16:30', status:'pending', jumpPage:'项目列表',
+    remark:'到期次日提醒一次' },
+  { id:7, cat:'work', tag:'project_renew', act:ACT.approve_reject,
+    title:'中安消防机构提交万科城市花园项目续签申请',
+    content:'中安消防机构提交万科城市花园项目的续签申请，请仔细核对"项目信息""项目范围""公示信息""服务计划"等内容无误后，及时进行确认操作。',
+    business:'项目续签', sender:'中安消防机构项目负责人', receiver:'万科物业（委托单位）',
+    time:'2026-03-14 14:00', status:'pending', jumpPage:'项目信息/选择联系人' },
+  { id:8, cat:'work', tag:'plan_change', act:ACT.approve_reject,
+    title:'正安机构提交了绿城玫瑰园项目维保计划变更申请',
+    content:'正安机构提交了绿城玫瑰园项目维保计划变更申请，请及时查看并确认。',
+    business:'计划变更', sender:'正安机构项目负责人', receiver:'绿城物业（委托单位）',
+    time:'2026-03-13 09:00', status:'pending', jumpPage:'维保计划详情页' },
+  { id:9, cat:'work', tag:'plan_change', act:ACT.view_detail,
+    title:'万科物业同意恒信项目维保计划变更申请',
+    content:'万科物业同意恒信项目维保计划变更申请。',
+    business:'计划变更', sender:'恒信机构项目负责人', receiver:'万科物业（委托单位）',
+    time:'2026-03-12 18:00', status:'done', jumpPage:'维保计划详情页' },
+  { id:10, cat:'work', tag:'plan_change', act:ACT.view_detail,
+    title:'绿城物业不同意翠苑项目维保计划变更申请',
+    content:'绿城物业不同意翠苑项目维保计划变更申请。',
+    business:'计划变更', sender:'翠苑机构项目负责人', receiver:'绿城物业（委托单位）',
+    time:'2026-03-12 11:30', status:'done', jumpPage:'维保计划详情页' },
+  { id:11, cat:'work', tag:'feedback_eval', act:ACT.go_operate,
+    title:'安信机构提交执业反馈单',
+    content:'安信机构金都花园项目提交2026年03月10日执业反馈单，请及时查看、确认执业反馈信息，并对本次执业进行客观评价。',
+    business:'反馈评价', sender:'安信机构项目负责人', receiver:'金都物业（委托单位）',
+    time:'2026-03-11 16:00', status:'pending', jumpPage:'反馈评价页面' },
+  { id:12, cat:'work', tag:'feedback_eval', act:ACT.view_detail,
+    title:'万达物业已评价执业反馈单',
+    content:'万达物业已对万达广场项目2026年03月08日执业反馈单进行评价，请及时查看。',
+    business:'反馈评价', sender:'万达广场项目负责人', receiver:'瑞安消防（委托单位）',
+    time:'2026-03-10 14:00', status:'done', jumpPage:'反馈评价页面' },
+  { id:13, cat:'work', tag:'eval_expire', act:ACT.go_operate,
+    title:'恒信机构提交执业反馈单评价超期',
+    content:'恒信机构恒大花园项目提交2026年03月06日执业反馈单超过24小时尚未评价，请及时操作。',
+    business:'反馈评价', sender:'系统管理员', receiver:'恒大物业（委托单位）',
+    time:'2026-03-10 10:00', status:'pending', jumpPage:'反馈评价页面' },
+  { id:14, cat:'work', tag:'project_dock', act:ACT.approve_reject,
+    title:'中安消防向您发出了绿城玫瑰园项目对接申请',
+    content:'中安消防向您发出了绿城玫瑰园项目对接申请，请仔细核对"委托单位信息"及"合同信息"等内容无误后，及时进行确认操作。',
+    business:'项目登记', sender:'中安消防项目负责人', receiver:'绿城物业（委托单位）',
+    time:'2026-03-08 09:00', status:'done', jumpPage:'查看详情',
+    handleResult:'同意', handleUser:'王磊', handleRole:'委托单位管理员', handleTime:'2026-03-08 10:15' },
+  { id:15, cat:'work', tag:'practice_apply', act:ACT.approve_reject,
+    title:'华安检测向您发出了世纪花园执业申请',
+    content:'华安检测向您发出了世纪花园项目的执业申请，请仔细核对"项目信息""项目范围""公示信息""维保计划"等内容无误后，及时进行确认操作。',
+    business:'项目登记', sender:'华安检测项目负责人', receiver:'世纪花园物业（委托单位）',
+    time:'2026-03-07 14:30', status:'done', jumpPage:'查看详情',
+    handleResult:'同意', handleUser:'陈静', handleRole:'委托单位管理员', handleTime:'2026-03-07 16:20', handleContact:'刘建国' },
+  { id:30, cat:'work', tag:'feedback_eval', act:ACT.go_operate,
+    title:'正泰消防提交执业反馈单',
+    content:'正泰消防恒大花园项目提交2026年03月05日执业反馈单，请及时查看、确认执业反馈信息，并对本次执业进行客观评价。',
+    business:'反馈评价', sender:'正泰消防项目负责人', receiver:'恒大物业（委托单位）',
+    time:'2026-03-06 10:00', status:'done', jumpPage:'反馈评价页面' },
+
+  // ============ 消息通知 (category: 'message') ============
+  { id:16, cat:'message', tag:'cert_success', act:ACT.go_operate,
+    title:'您已完成了实名认证',
+    content:'您已完成了实名认证，请按系统提示完成相应操作。',
+    business:'实名认证', sender:'系统管理员', receiver:'所有完成实名认证的用户',
+    time:'2026-03-16 10:00', status:'pending', jumpPage:'选择事由' },
+  { id:17, cat:'message', tag:'suspend', act:ACT.mark_read,
+    title:'2026年03月10日起，华信检测暂停执业',
+    content:'2026年03月10日起，华信检测暂停执业。暂停执业期间，不能新增项目、开始执业。',
+    business:'暂停执业通知', sender:'机构法人', receiver:'机构所有用户/处于服务期的委托单位用户/总队/辖区监管用户',
+    time:'2026-03-16 08:30', status:'pending', jumpPage:'无',
+    remark:'不能新增项目、不能开始执业。' },
+  { id:18, cat:'message', tag:'fault', act:ACT.view_detail,
+    title:'锦绣花园消防系统发现二级故障',
+    content:'锦绣花园，消防报警系统，烟感探测器发生二级故障。\n请根据法律法规及合同约定，及时进行故障修复。属于机构维修范围的，由机构录入修复信息，属于委托单位自行维修或委托其他单位维修的，由委托单位录入修复信息。故障修复信息将作为监管部门厘清主体责任的重要依据。',
+    business:'发现故障', sender:'安达消防机构项目负责人', receiver:'委托单位用户/项目组成员',
+    time:'2026-03-15 14:20', status:'pending', jumpPage:'故障详情页' },
+  { id:19, cat:'message', tag:'monthly_report', act:ACT.view_detail,
+    title:'万达广场项目，第3期月度报表已生成',
+    content:'万达广场项目，第3期月度报表已生成，请查阅。',
+    business:'月度报表', sender:'瑞安消防机构项目负责人', receiver:'万达物业（委托单位）',
+    time:'2026-03-15 10:00', status:'pending', jumpPage:'月度报表详情页' },
+  { id:20, cat:'message', tag:'service_report', act:ACT.view_detail,
+    title:'恒大花园项目，第1期到第3期服务报告已生成',
+    content:'恒大花园项目，第1期到第3期服务报告已生成，请查阅。',
+    business:'服务报告', sender:'正泰消防机构项目负责人', receiver:'恒大物业（委托单位）',
+    time:'2026-03-14 16:00', status:'pending', jumpPage:'服务报告详情页' },
+  { id:21, cat:'message', tag:'contract_exp', act:ACT.mark_read,
+    title:'万科城市花园项目将于90天后到期',
+    content:'万科城市花园项目将于90天后到期，如需续签合同，请及时操作，以免影响后续执业。',
+    business:'合同到期', sender:'系统管理员', receiver:'委托单位用户/项目负责人',
+    time:'2026-03-14 09:00', status:'done', jumpPage:'无' },
+  { id:22, cat:'message', tag:'contract_exp', act:ACT.mark_read,
+    title:'绿城玫瑰园项目将于60天后到期',
+    content:'绿城玫瑰园项目将于60天后到期，如需续签合同，请及时操作，以免影响后续执业。',
+    business:'合同到期', sender:'系统管理员', receiver:'委托单位用户/项目负责人',
+    time:'2026-03-13 09:00', status:'pending', jumpPage:'无' },
+  { id:23, cat:'message', tag:'contract_exp', act:ACT.mark_read,
+    title:'世纪花园项目将于30天后到期',
+    content:'世纪花园项目将于30天后到期，如需续签合同，请及时操作，以免影响后续执业。',
+    business:'合同到期', sender:'系统管理员', receiver:'委托单位用户/项目负责人',
+    time:'2026-03-12 09:00', status:'pending', jumpPage:'无' },
+  { id:24, cat:'message', tag:'staff_change', act:ACT.view_detail,
+    title:'万达广场项目人员发生了变更',
+    content:'万达广场项目人员发生变更，请及时查看并替换现场项目公示信息。',
+    business:'人员变更', sender:'瑞安消防机构项目负责人', receiver:'委托单位用户/项目组全体人员',
+    time:'2026-03-11 15:00', status:'done', jumpPage:'人员公示页' },
+  { id:25, cat:'message', tag:'staff_change', act:ACT.view_detail,
+    title:'恒大花园项目负责人变更为李强',
+    content:'恒大花园项目负责人变更为李强，请及时查看并替换现场项目公示信息。',
+    business:'人员变更', sender:'正泰消防机构项目负责人', receiver:'委托单位用户/项目组全体人员',
+    time:'2026-03-10 11:00', status:'pending', jumpPage:'人员公示页' },
+  { id:26, cat:'message', tag:'resume_work', act:ACT.view_detail,
+    title:'华信检测恢复执业',
+    content:'华信检测恢复执业。',
+    business:'恢复执业申请', sender:'系统管理员', receiver:'机构全体人员/相关委托单位',
+    time:'2026-03-09 14:00', status:'done', jumpPage:'恢复执业申请详情' },
+
+  // ============ 预警提示 (category: 'alert') ============
+  { id:27, cat:'alert', tag:'inspect_fail', act:ACT.view_detail,
+    title:'万达广场项目检查不合格',
+    content:'2026年03月14日，万达广场项目检查不合格，请尽快整改。',
+    business:'监督检查', sender:'系统管理员', receiver:'机构法人/技术负责人/项目负责人/委托单位用户',
+    time:'2026-03-14 17:00', status:'pending', jumpPage:'检查单详情' },
+  { id:28, cat:'alert', tag:'order_stop', act:ACT.view_detail,
+    title:'2026年03月12日，华信检测受到责令停止执业处罚',
+    content:'2026年03月12日，华信检测受到责令停止执业处罚。自处罚之日起停止执业，恢复执业后方能开展执业。',
+    business:'责令停业', sender:'系统管理员', receiver:'相关委托单位',
+    time:'2026-03-12 10:00', status:'pending', jumpPage:'责令停业详情' },
+  { id:29, cat:'alert', tag:'inspect_fail', act:ACT.view_detail,
+    title:'恒大花园项目检查不合格',
+    content:'2026年02月20日，恒大花园项目检查不合格，请尽快整改。',
+    business:'监督检查', sender:'系统管理员', receiver:'机构法人/技术负责人/项目负责人/委托单位用户',
+    time:'2026-02-20 16:00', status:'done', jumpPage:'检查单详情' },
+  { id:31, cat:'alert', tag:'order_stop', act:ACT.view_detail,
+    title:'2026年01月15日，安信检测受到责令停止执业处罚',
+    content:'2026年01月15日，安信检测受到责令停止执业处罚。自处罚之日起停止执业，恢复执业后方能开展执业。',
+    business:'责令停业', sender:'系统管理员', receiver:'相关委托单位',
+    time:'2026-01-15 09:00', status:'done', jumpPage:'责令停业详情' },
+];
+
+let allItems = JSON.parse(JSON.stringify(INIT_ITEMS));
+
+// ============================== STATE ==============================
+let currentMainTab = 'work';
+let currentSubTab = 'pending';
+let currentListCat = 'work';
+let navStack = [];
+let searchKeyword = '';
+let filterTag = '';
+let filterTime = '';
+
+// ============================== HELPERS ==============================
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+function showToast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function showPage(id, anim) {
+  $$('.page').forEach(p => p.classList.remove('active','slide-in','slide-back'));
+  const pg = $(`#${id}`);
+  pg.classList.add('active');
+  if (anim) pg.classList.add(anim);
+}
+
+function catLabel(cat) { return {work:'工作提醒',message:'消息通知',alert:'预警提示'}[cat]; }
+function statusLabel(item) {
+  if (item.cat === 'work') return item.status === 'pending' ? '未处理' : '已处理';
+  return item.status === 'pending' ? '未读' : '已读';
+}
+function statusBadgeClass(item) {
+  if (item.cat === 'work') return item.status === 'pending' ? 'badge-pending' : 'badge-done';
+  return item.status === 'pending' ? 'badge-unread' : 'badge-read';
+}
+function pendingCount(cat) { return allItems.filter(i => i.cat === cat && i.status === 'pending').length; }
+
+function stampHandle(item, result) {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  item.handleResult = result;
+  item.handleUser = '张伟';
+  item.handleRole = '委托单位管理员';
+  item.handleTime = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+
+// ============================== RENDER CARD ==============================
+function renderCard(item, showBadge) {
+  const tg = TAGS[item.tag];
+  const dot = (item.status === 'pending' && !showBadge) ? '<div class="unread-dot"></div>' : '';
+  const badge = showBadge ? `<span class="badge ${statusBadgeClass(item)}">${statusLabel(item)}</span>` : '';
+  return `<div class="card" data-id="${item.id}">
+    <div class="card-icon" style="background:${tg.bg};color:${tg.color}">${tg.icon}</div>
+    <div class="card-body">
+      <div class="card-type">${tg.label} ${badge}</div>
+      <div class="card-title">${item.title}</div>
+      <div class="card-time">${item.time}</div>
+    </div>
+    ${dot}
+    <div class="card-arrow">${I.arrowR}</div>
+  </div>`;
+}
+
+// ============================== HOME ==============================
+function renderHome() {
+  ['work','message','alert'].forEach(cat => {
+    const items = allItems.filter(i => i.cat === cat && i.status === 'pending');
+    const list = $(`#home-list-${cat}`);
+    const show = items.slice(0, 5);
+    list.innerHTML = show.length ? show.map(i => renderCard(i, false)).join('') :
+      `<div class="empty"><p>暂无待处理的${catLabel(cat)}</p></div>`;
+    const cnt = pendingCount(cat);
+    const badge = $(`#badge-${cat}`);
+    badge.textContent = cnt;
+    badge.style.display = cnt > 0 ? 'block' : 'none';
+  });
+}
+
+// ============================== FULL LIST ==============================
+function getTagsForCat(cat) {
+  const catItems = allItems.filter(i => i.cat === cat);
+  const seen = new Set();
+  return catItems.map(i => i.tag).filter(t => { if (seen.has(t)) return false; seen.add(t); return true; });
+}
+
+function matchesTimeFilter(item) {
+  if (!filterTime) return true;
+  const d = new Date(item.time.replace(/-/g, '/'));
+  const now = new Date('2026/03/16 23:59:59');
+  const diff = now - d;
+  const day = 86400000;
+  if (filterTime === '3d') return diff <= 3 * day;
+  if (filterTime === '7d') return diff <= 7 * day;
+  if (filterTime === '30d') return diff <= 30 * day;
+  return true;
+}
+
+function renderFullList() {
+  const cat = currentListCat;
+  const isWork = cat === 'work';
+  const labels = isWork
+    ? [{key:'pending',label:'未处理'},{key:'done',label:'已处理'},{key:'all',label:'全部'}]
+    : [{key:'pending',label:'未读'},{key:'done',label:'已读'},{key:'all',label:'全部'}];
+
+  const catItems = allItems.filter(i => i.cat === cat);
+  const counts = {
+    pending: catItems.filter(i => i.status === 'pending').length,
+    done: catItems.filter(i => i.status === 'done').length,
+    all: catItems.length,
+  };
+
+  const colors = { pending:'#ff4d4f', done:'#52c41a', all:'#8c8c8c' };
+  $('#sub-tabs').innerHTML = labels.map(l =>
+    `<button class="sub-tab${currentSubTab===l.key?' active':''}" data-status="${l.key}">${l.label} <span class="cnt" style="background:${colors[l.key]}">${counts[l.key]}</span></button>`
+  ).join('');
+  $('#list-title').textContent = catLabel(cat);
+
+  let filtered = catItems;
+  if (currentSubTab === 'pending') filtered = filtered.filter(i => i.status === 'pending');
+  else if (currentSubTab === 'done') filtered = filtered.filter(i => i.status === 'done');
+
+  if (searchKeyword) {
+    const kw = searchKeyword.toLowerCase();
+    filtered = filtered.filter(i => i.title.toLowerCase().includes(kw) || i.content.toLowerCase().includes(kw));
+  }
+  if (filterTag) filtered = filtered.filter(i => i.tag === filterTag);
+  if (filterTime) filtered = filtered.filter(matchesTimeFilter);
+
+  const info = $('#search-result-info');
+  if (searchKeyword || filterTag || filterTime) {
+    info.style.display = 'block';
+    info.textContent = `共找到 ${filtered.length} 条结果`;
+  } else {
+    info.style.display = 'none';
+  }
+
+  const list = $('#full-list');
+  list.innerHTML = filtered.length
+    ? filtered.map(i => renderCard(i, true)).join('')
+    : `<div class="empty"><p>暂无数据</p></div>`;
+
+  $$('#sub-tabs .sub-tab').forEach(tab => {
+    tab.onclick = () => {
+      currentSubTab = tab.dataset.status;
+      renderFullList();
+    };
+  });
+
+  renderFilterDropdowns(cat);
+}
+
+function renderFilterDropdowns(cat) {
+  const tags = getTagsForCat(cat);
+  const tagDropdown = $('#filter-tag-dropdown');
+  tagDropdown.innerHTML = `<div class="fd-item${!filterTag?' active':''}" data-val="">全部类型</div>` +
+    tags.map(t => `<div class="fd-item${filterTag===t?' active':''}" data-val="${t}">${TAGS[t].label}</div>`).join('');
+
+  tagDropdown.querySelectorAll('.fd-item').forEach(el => {
+    el.onclick = e => {
+      e.stopPropagation();
+      filterTag = el.dataset.val;
+      const btn = $('#filter-tag-btn');
+      $('#filter-tag-text').textContent = filterTag ? TAGS[filterTag].label : '消息类型';
+      btn.classList.toggle('active', !!filterTag);
+      tagDropdown.classList.remove('show');
+      renderFullList();
+    };
+  });
+
+  const timeOptions = [{val:'',label:'全部时间'},{val:'3d',label:'近3天'},{val:'7d',label:'近7天'},{val:'30d',label:'近30天'}];
+  const timeDropdown = $('#filter-time-dropdown');
+  timeDropdown.innerHTML = timeOptions.map(o =>
+    `<div class="fd-item${filterTime===o.val?' active':''}" data-val="${o.val}">${o.label}</div>`
+  ).join('');
+
+  timeDropdown.querySelectorAll('.fd-item').forEach(el => {
+    el.onclick = e => {
+      e.stopPropagation();
+      filterTime = el.dataset.val;
+      const btn = $('#filter-time-btn');
+      const picked = timeOptions.find(o => o.val === filterTime);
+      $('#filter-time-text').textContent = filterTime ? picked.label : '时间范围';
+      btn.classList.toggle('active', !!filterTime);
+      timeDropdown.classList.remove('show');
+      renderFullList();
+    };
+  });
+}
+
+// ============================== DETAIL ==============================
+function renderDetail(item) {
+  const tg = TAGS[item.tag];
+  $('#detail-page-title').textContent = tg.label + '详情';
+
+  const contentText = (item.content || '').replace(/\n/g, '<br>');
+  let extraRows = '';
+  if (item.remark) extraRows += `<div class="detail-row"><span class="detail-label">备　　注</span><span class="detail-value">${item.remark}</span></div>`;
+
+  let aiTipHtml = '';
+  if (tg.aiTip && item.status === 'pending') {
+    aiTipHtml = `<div class="ai-tip">
+      <div class="ai-tip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 10v2"/><circle cx="12" cy="16" r="1"/><path d="M17 10h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3"/></svg></div>
+      <div class="ai-tip-body">
+        <div class="ai-tip-label">AI 小助手提示</div>
+        <div class="ai-tip-text">${tg.aiTip}</div>
+      </div>
+    </div>`;
+  }
+
+  const dc = $('#detail-content');
+  dc.innerHTML = `${aiTipHtml}
+    <div class="detail-section">
+      <div class="detail-title">${item.title}</div>
+      <div class="detail-meta">
+        <div class="detail-row"><span class="detail-label">消息标签</span><span class="detail-value"><span class="badge" style="background:${tg.bg};color:${tg.color}">${tg.label}</span></span></div>
+        <div class="detail-row"><span class="detail-label">业务环节</span><span class="detail-value">${item.business}</span></div>
+        <div class="detail-row"><span class="detail-label">发送对象</span><span class="detail-value">${item.sender}</span></div>
+        <div class="detail-row"><span class="detail-label">接收对象</span><span class="detail-value">${item.receiver}</span></div>
+        <div class="detail-row"><span class="detail-label">发生时间</span><span class="detail-value">${item.time}</span></div>
+        <div class="detail-row"><span class="detail-label">当前状态</span><span class="detail-value"><span class="badge ${statusBadgeClass(item)}">${statusLabel(item)}</span></span></div>
+        ${item.jumpPage ? `<div class="detail-row"><span class="detail-label">跳转页面</span><span class="detail-value" style="color:var(--primary)">${item.jumpPage}</span></div>` : ''}
+        ${extraRows}
+      </div>
+    </div>
+    <div class="detail-section">
+      <h4>消息内容</h4>
+      <div class="detail-content">${contentText}</div>
+    </div>
+    ${renderReviewLinks(item, tg)}
+    ${renderHandleInfo(item)}
+    ${item.act === ACT.evaluate && item.status === 'pending' ? renderRatingSection() : ''}`;
+
+  renderActionBar(item);
+  bindReviewLinks(item, tg);
+}
+
+function renderReviewLinks(item, tg) {
+  if (!tg.reviewLinks || !tg.reviewLinks.length) return '';
+  const viewed = item._viewedLinks || {};
+  const total = tg.reviewLinks.length;
+  const doneCount = tg.reviewLinks.filter(l => viewed[l]).length;
+  const checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const links = tg.reviewLinks.map(name => {
+    const done = !!viewed[name];
+    return `<div class="review-link${done?' viewed':''}" data-link="${name}">
+      <div class="rl-check">${checkSvg}</div>
+      <span class="rl-name">${name}</span>
+      <span class="rl-arrow">${I.arrowR}</span>
+    </div>`;
+  }).join('');
+  const allDone = doneCount === total;
+  return `<div class="detail-section" id="review-links-section">
+    <h4>查看详情 <span style="font-weight:400;font-size:12px;color:${allDone?'var(--success)':'var(--warning)'}">（${allDone?'已全部查看':`${doneCount}/${total}`}）</span></h4>
+    <div class="review-links" id="review-links">${links}</div>
+    ${item.status==='pending'&&!allDone?'<div class="review-progress">请查看全部内容后方可进行同意操作</div>':''}
+  </div>`;
+}
+
+function bindReviewLinks(item, tg) {
+  if (!tg.reviewLinks || !tg.reviewLinks.length) return;
+  const links = $$('#review-links .review-link');
+  links.forEach(el => {
+    el.onclick = () => {
+      const name = el.dataset.link;
+      if (!item._viewedLinks) item._viewedLinks = {};
+      item._viewedLinks[name] = true;
+      showToast(`已查看「${name}」`);
+      setTimeout(() => renderDetail(item), 400);
+    };
+  });
+}
+
+const CONTACTS = [
+  { name:'刘建国', role:'项目经理' },
+  { name:'张敏',   role:'安全主管' },
+  { name:'李志远', role:'设施管理员' },
+  { name:'王芳',   role:'行政负责人' },
+];
+
+function showContactPicker(item, afterPick) {
+  const overlay = $('#dialog-overlay');
+  const box = $('#dialog-box');
+  let selected = '';
+  box.innerHTML = `
+    <h3>选择项目对接人</h3>
+    <div class="contact-list" id="contact-list">
+      ${CONTACTS.map(c => `<div class="contact-item" data-name="${c.name}">
+        <div class="contact-avatar">${c.name[0]}</div>
+        <div class="contact-info"><div class="contact-name">${c.name}</div><div class="contact-role">${c.role}</div></div>
+        <svg class="contact-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>`).join('')}
+    </div>
+    <div class="dialog-btns">
+      <button class="btn btn-outline" id="cpCancel">取消</button>
+      <button class="btn btn-disabled" id="cpConfirm" disabled>确认选择</button>
+    </div>`;
+  overlay.classList.add('show');
+  $('#cpCancel').onclick = () => overlay.classList.remove('show');
+  $$('#contact-list .contact-item').forEach(el => {
+    el.onclick = () => {
+      $$('#contact-list .contact-item').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+      selected = el.dataset.name;
+      const btn = $('#cpConfirm');
+      btn.disabled = false;
+      btn.className = 'btn btn-primary';
+    };
+  });
+  $('#cpConfirm').onclick = () => {
+    if (!selected) return;
+    overlay.classList.remove('show');
+    afterPick(selected);
+  };
+}
+
+function renderHandleInfo(item) {
+  if (!item.handleResult) return '';
+  const isReject = item.handleResult !== '同意';
+  const cls = isReject ? 'handle-section rejected' : 'handle-section';
+  const icon = isReject
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+  const color = isReject ? 'var(--danger)' : 'var(--success)';
+  let extraHandleRows = '';
+  if (item.handleReason) extraHandleRows += `<div class="detail-row"><span class="detail-label">处理备注</span><span class="detail-value">${item.handleReason}</span></div>`;
+  if (item.handleContact) extraHandleRows += `<div class="detail-row"><span class="detail-label">项目对接人</span><span class="detail-value">${item.handleContact}</span></div>`;
+  return `<div class="${cls}">
+    <h4 style="color:${color}">${icon} 处理信息</h4>
+    <div class="detail-meta">
+      <div class="detail-row"><span class="detail-label">处理状态</span><span class="detail-value"><span class="badge" style="background:${isReject?'var(--danger-light);color:var(--danger)':'var(--success-light);color:var(--success)'}">${item.handleResult}</span></span></div>
+      <div class="detail-row"><span class="detail-label">操作人员</span><span class="detail-value">${item.handleUser}</span></div>
+      <div class="detail-row"><span class="detail-label">操作角色</span><span class="detail-value">${item.handleRole}</span></div>
+      <div class="detail-row"><span class="detail-label">操作时间</span><span class="detail-value">${item.handleTime}</span></div>
+      ${extraHandleRows}
+    </div>
+  </div>`;
+}
+
+function renderRatingSection() {
+  return `<div class="detail-section" id="rating-section">
+    <h4>服务评价</h4>
+    <div class="rating" id="rating-stars">
+      ${[1,2,3,4,5].map(n => `<svg class="star" data-val="${n}" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`).join('')}
+    </div>
+    <p style="text-align:center;font-size:12px;color:var(--text-3)" id="rating-text">请选择评分</p>
+  </div>`;
+}
+
+let currentRating = 0;
+function bindRatingStars() {
+  const stars = $$('#rating-stars .star');
+  if (!stars.length) return;
+  const labels = ['','非常不满意','不满意','一般','满意','非常满意'];
+  stars.forEach(s => {
+    s.onclick = () => {
+      currentRating = parseInt(s.dataset.val);
+      stars.forEach((ss, i) => ss.classList.toggle('active', i < currentRating));
+      $('#rating-text').textContent = labels[currentRating];
+    };
+  });
+}
+
+function renderActionBar(item) {
+  const bar = $('#action-bar');
+  if (item.status === 'done') {
+    const label = item.cat === 'work' ? '已处理' : '已读';
+    bar.innerHTML = `<button class="btn btn-disabled" disabled>${label}</button>`;
+    return;
+  }
+
+  switch (item.act) {
+    case ACT.approve_reject: {
+      const tgCfg = TAGS[item.tag];
+      const hasLinks = tgCfg.reviewLinks && tgCfg.reviewLinks.length;
+      const allViewed = hasLinks ? tgCfg.reviewLinks.every(l => item._viewedLinks && item._viewedLinks[l]) : true;
+      if (hasLinks && !allViewed) {
+        bar.innerHTML = `<button class="btn btn-danger-outline" id="actReject">拒 绝</button><button class="btn btn-disabled" disabled title="请先查看全部内容">同 意</button>`;
+      } else {
+        bar.innerHTML = `<button class="btn btn-danger-outline" id="actReject">拒 绝</button><button class="btn btn-primary" id="actApprove">同 意</button>`;
+        $('#actApprove').onclick = () => {
+          if (hasLinks) {
+            showContactPicker(item, (contact) => {
+              item.status = 'done';
+              stampHandle(item, '同意');
+              item.handleContact = contact;
+              showToast('已同意，项目对接人：' + contact);
+              setTimeout(() => { renderDetail(item); renderFullList(); renderHome(); }, 500);
+            });
+          } else {
+            item.status = 'done';
+            stampHandle(item, '同意');
+            showToast('已同意');
+            setTimeout(() => { renderDetail(item); renderFullList(); renderHome(); }, 500);
+          }
+        };
+      }
+      $('#actReject').onclick = () => showRejectDialog(item);
+      break;
+    }
+    case ACT.approve_return:
+      bar.innerHTML = `<button class="btn btn-outline" id="actReturn">驳 回</button><button class="btn btn-primary" id="actApprove2">同 意</button>`;
+      $('#actApprove2').onclick = () => {
+        item.status = 'done';
+        stampHandle(item, '同意');
+        showToast('已同意');
+        setTimeout(() => { renderDetail(item); renderFullList(); renderHome(); }, 500);
+      };
+      $('#actReturn').onclick = () => showRejectDialog(item, '驳回');
+      break;
+    case ACT.go_operate:
+      bar.innerHTML = `<button class="btn btn-primary" id="actGo">去操作</button>`;
+      $('#actGo').onclick = () => {
+        item.status = 'done';
+        showToast('操作成功');
+        setTimeout(() => { renderDetail(item); renderFullList(); renderHome(); }, 500);
+      };
+      break;
+    case ACT.evaluate:
+      bar.innerHTML = `<button class="btn btn-primary" id="actEval">提交评价</button>`;
+      setTimeout(bindRatingStars, 50);
+      $('#actEval').onclick = () => {
+        if (currentRating === 0) { showToast('请先选择评分'); return; }
+        item.status = 'done';
+        showToast('评价提交成功');
+        currentRating = 0;
+        setTimeout(() => { renderDetail(item); renderFullList(); renderHome(); }, 500);
+      };
+      break;
+    case ACT.view_detail:
+      bar.innerHTML = `<button class="btn btn-primary" id="actRead">标记已读</button>`;
+      $('#actRead').onclick = () => {
+        item.status = 'done';
+        showToast('已标记');
+        setTimeout(() => { renderDetail(item); renderFullList(); renderHome(); }, 500);
+      };
+      break;
+    case ACT.mark_read:
+      bar.innerHTML = `<button class="btn btn-primary" id="actMark">标记已读</button>`;
+      $('#actMark').onclick = () => {
+        item.status = 'done';
+        showToast('已标记已读');
+        setTimeout(() => { renderDetail(item); renderFullList(); renderHome(); }, 500);
+      };
+      break;
+  }
+}
+
+// ============================== REJECT / RETURN DIALOG ==============================
+function showRejectDialog(item, label = '拒绝') {
+  const overlay = $('#dialog-overlay');
+  const box = $('#dialog-box');
+  box.innerHTML = `
+    <h3>${label}原因</h3>
+    <textarea placeholder="请输入${label}原因（选填）" id="rejectReason"></textarea>
+    <div class="dialog-btns">
+      <button class="btn btn-outline" id="dlgCancel">取消</button>
+      <button class="btn btn-primary" id="dlgConfirm">确认${label}</button>
+    </div>`;
+  overlay.classList.add('show');
+  $('#dlgCancel').onclick = () => overlay.classList.remove('show');
+  $('#dlgConfirm').onclick = () => {
+    overlay.classList.remove('show');
+    item.status = 'done';
+    stampHandle(item, label);
+    item.handleReason = ($('#rejectReason').value || '').trim();
+    showToast(`已${label}`);
+    setTimeout(() => { renderDetail(item); renderFullList(); renderHome(); }, 500);
+  };
+}
+
+// ============================== EVENTS ==============================
+
+// Main tabs
+$$('.main-tab').forEach(tab => {
+  tab.onclick = () => {
+    $$('.main-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentMainTab = tab.dataset.tab;
+    $$('.tab-content').forEach(c => c.classList.remove('active'));
+    $(`#tab-${currentMainTab}`).classList.add('active');
+  };
+});
+
+// View more
+function resetFilters() {
+  searchKeyword = ''; filterTag = ''; filterTime = '';
+  const si = $('#search-input');
+  if (si) si.value = '';
+  const sc = $('#search-clear');
+  if (sc) sc.classList.remove('show');
+  const tb = $('#filter-tag-btn');
+  if (tb) { tb.classList.remove('active'); $('#filter-tag-text').textContent = '消息类型'; }
+  const tmb = $('#filter-time-btn');
+  if (tmb) { tmb.classList.remove('active'); $('#filter-time-text').textContent = '时间范围'; }
+}
+$$('.btn-more').forEach(btn => {
+  btn.onclick = () => {
+    currentListCat = btn.dataset.cat;
+    currentSubTab = 'pending';
+    resetFilters();
+    renderFullList();
+    navStack = ['page-home'];
+    showPage('page-list', 'slide-in');
+  };
+});
+
+// Back to home
+$('#btn-back-home').onclick = () => {
+  navStack = [];
+  renderHome();
+  showPage('page-home', 'slide-back');
+};
+
+// Back from detail
+$('#btn-back-list').onclick = () => {
+  const prev = navStack.pop();
+  if (prev === 'page-home') {
+    renderHome();
+    showPage('page-home', 'slide-back');
+  } else {
+    renderFullList();
+    showPage('page-list', 'slide-back');
+  }
+};
+
+// Card click delegation
+document.addEventListener('click', e => {
+  const card = e.target.closest('.card');
+  if (!card) return;
+  const id = parseInt(card.dataset.id);
+  const item = allItems.find(i => i.id === id);
+  if (!item) return;
+
+  const parentPage = card.closest('.page');
+  if (parentPage.id === 'page-home') {
+    navStack = ['page-home'];
+  } else if (parentPage.id === 'page-list') {
+    navStack.push('page-list');
+  }
+  renderDetail(item);
+  showPage('page-detail', 'slide-in');
+});
+
+// Search input
+let searchTimer = null;
+$('#search-input').addEventListener('input', e => {
+  const val = e.target.value.trim();
+  $('#search-clear').classList.toggle('show', val.length > 0);
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { searchKeyword = val; renderFullList(); }, 250);
+});
+$('#search-clear').onclick = () => {
+  $('#search-input').value = '';
+  $('#search-clear').classList.remove('show');
+  searchKeyword = '';
+  renderFullList();
+};
+
+// Filter dropdowns toggle
+$('#filter-tag-btn').onclick = e => {
+  e.stopPropagation();
+  $('#filter-time-dropdown').classList.remove('show');
+  $('#filter-tag-dropdown').classList.toggle('show');
+};
+$('#filter-time-btn').onclick = e => {
+  e.stopPropagation();
+  $('#filter-tag-dropdown').classList.remove('show');
+  $('#filter-time-dropdown').classList.toggle('show');
+};
+$('#filter-tag-dropdown').onclick = e => e.stopPropagation();
+$('#filter-time-dropdown').onclick = e => e.stopPropagation();
+document.addEventListener('click', () => {
+  $('#filter-tag-dropdown').classList.remove('show');
+  $('#filter-time-dropdown').classList.remove('show');
+});
+
+// ============================== INIT ==============================
+renderHome();
+</script>
+</body>
+</html>
