@@ -229,6 +229,7 @@
     .rl-iot-remind--guide { color:#d46b08; }
     .review-progress { font-size:12px; color:var(--text-3); margin-top:6px; text-align:right; }
 
+    /* 物联告警列表页 */
     .iot-alarm-card {
       background:var(--white); border-radius:12px; padding:14px 16px; margin-bottom:10px;
       box-shadow:var(--shadow); border-left:3px solid #ff4d4f;
@@ -394,6 +395,7 @@
   <div class="action-bar" id="action-bar"></div>
 </div>
 
+<!-- ===== Page: 物联告警（执业反馈-查看物联告警） ===== -->
 <div class="page" id="page-iot-alarm">
   <div class="header">
     <button class="header-back" id="btn-back-iot-alarm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>返回</button>
@@ -656,6 +658,7 @@ const INIT_ITEMS = [
 
 let allItems = JSON.parse(JSON.stringify(INIT_ITEMS));
 
+// 执业反馈 · 物联告警链接（点击进入异动列表）
 const LINK_IOT_ALARM = '查看物联告警';
 let iotAlarmSourceItem = null;
 
@@ -1257,6 +1260,7 @@ $('#btn-back-list').onclick = () => {
   }
 };
 
+// 物联告警页返回执业反馈详情
 $('#btn-back-iot-alarm').onclick = () => {
   const item = iotAlarmSourceItem;
   if (item) {
