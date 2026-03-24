@@ -248,8 +248,15 @@
       display:flex; align-items:center; justify-content:center; flex-shrink:0;
     }
     .ai-tip-icon svg { width:20px; height:20px; color:#fff; }
-    .ai-tip-body { flex:1; }
-    .ai-tip-label { font-size:12px; font-weight:600; color:#1677ff; margin-bottom:4px; }
+    .ai-tip-body { flex:1; min-width:0; }
+    .ai-tip-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:4px; }
+    .ai-tip-label { font-size:12px; font-weight:600; color:#1677ff; flex:1; }
+    .ai-tip-copy {
+      flex-shrink:0; padding:2px 10px; font-size:12px; line-height:1.5;
+      color:#1677ff; background:#fff; border:1px solid #91caff; border-radius:6px;
+      cursor:pointer; -webkit-tap-highlight-color:transparent;
+    }
+    .ai-tip-copy:active { background:#e6f4ff; }
     .ai-tip-text { font-size:13px; line-height:1.6; color:#434343; }
 
     /* Review Links */
@@ -737,6 +744,29 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 1800);
 }
 
+function copyTextToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(() => true).catch(() => fallbackCopyText(text));
+  }
+  return Promise.resolve(fallbackCopyText(text));
+}
+function fallbackCopyText(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch (e) {
+    document.body.removeChild(ta);
+    return false;
+  }
+}
+
 function showPage(id, anim) {
   $$('.page').forEach(p => p.classList.remove('active','slide-in','slide-back'));
   const pg = $(`#${id}`);
@@ -951,7 +981,10 @@ function renderDetail(item) {
     aiTipHtml = `<div class="ai-tip">
       <div class="ai-tip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 10v2"/><circle cx="12" cy="16" r="1"/><path d="M17 10h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3"/></svg></div>
       <div class="ai-tip-body">
-        <div class="ai-tip-label">AI 小助手提示</div>
+        <div class="ai-tip-head">
+          <div class="ai-tip-label">AI 小助手提示</div>
+          <button type="button" class="ai-tip-copy" aria-label="复制提示文案">复制</button>
+        </div>
         <div class="ai-tip-text">${tg.aiTip}</div>
       </div>
     </div>`;
@@ -986,6 +1019,16 @@ function renderDetail(item) {
 
   renderActionBar(item);
   bindReviewLinks(item, tg);
+
+  const aiCopyBtn = dc.querySelector('.ai-tip-copy');
+  if (aiCopyBtn) {
+    aiCopyBtn.onclick = e => {
+      e.stopPropagation();
+      const tipEl = aiCopyBtn.closest('.ai-tip')?.querySelector('.ai-tip-text');
+      const txt = tipEl ? tipEl.textContent : '';
+      copyTextToClipboard(txt).then(ok => showToast(ok ? '已复制到剪贴板' : '复制失败'));
+    };
+  }
 }
 
 function renderIotAlarmPage(item) {
